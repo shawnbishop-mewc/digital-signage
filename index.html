@@ -108,14 +108,28 @@
     document.body.appendChild(v);
     v.play().catch(() => {});
 
-    // Silently refresh the iframe every hour so slide edits appear
-    // without triggering a full page navigation (which shows the URL bar)
-    if (id) {
-      setInterval(() => {
-        const iframe = document.getElementById('slides');
+    // Silently refresh the iframe every hour so slide edits appear.
+    // Fades out, reloads, then fades back in — no jarring black flash.
+    function reloadSlides() {
+      const iframe = document.getElementById('slides');
+      iframe.style.transition = 'opacity 1.5s';
+      iframe.style.opacity = '0';
+      setTimeout(() => {
+        iframe.onload = () => {
+          iframe.style.opacity = '1';
+          iframe.onload = null;
+        };
         iframe.src = iframe.src;
-      }, 3600000);
+      }, 1500);
     }
+
+    if (id) setInterval(reloadSlides, 3600000);
+
+    // Auto-recover if WiFi drops — reload slides as soon as connection returns
+    window.addEventListener('online', () => {
+      const iframe = document.getElementById('slides');
+      if (id && iframe.src) reloadSlides();
+    });
   </script>
 </body>
 </html>
